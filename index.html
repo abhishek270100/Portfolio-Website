@@ -110,6 +110,28 @@
 }
 
 
+/*======================================
+//--//-->   FIXED NAVBAR ANCHOR OFFSET FIX
+  Clicking a nav link (Resume, Projects, Contact, etc.) jumps straight to
+  the top of that section, which lands right underneath the fixed navbar
+  and hides the heading. scroll-margin-top tells the browser to stop a
+  bit earlier so the heading stays visible. The value is kept in sync
+  with the navbar's real rendered height by the script near the bottom
+  of the page, since the navbar's height changes on mobile widths.
+======================================*/
+:root {
+  --nav-offset: 80px;
+}
+
+#home-section,
+#about-section,
+#resume-section,
+#project-section,
+#section-counter,
+#contact-section {
+  scroll-margin-top: var(--nav-offset);
+}
+
 </style>
 
 
@@ -648,6 +670,51 @@
   <script src="js/scrollax.min.js"></script>
   
   <script src="js/main.js"></script>
-    
+
+  <script>
+  // FIX: clicking Resume/Projects/Contact (etc.) in the navbar hid the
+  // section heading behind the fixed navbar on mobile. This was because
+  // the theme's own script animates the scroll to a distance that
+  // doesn't account for the navbar's real height on small screens.
+  // This script takes over the nav-link clicks completely (blocking any
+  // other click handler on the same links) and scrolls to the correct
+  // spot itself, accounting for the navbar's actual current height.
+  (function () {
+    var navbar = document.getElementById('ftco-navbar');
+    var collapseEl = document.getElementById('ftco-nav');
+    if (!navbar) return;
+
+    function getNavOffset() {
+      return navbar.getBoundingClientRect().height + 15; // + a little breathing room
+    }
+
+    var navLinks = document.querySelectorAll('#ftco-nav .nav-link[href^="#"]');
+
+    navLinks.forEach(function (link) {
+      // capture phase + stopImmediatePropagation: runs before, and blocks,
+      // any other click handler (jQuery/main.js included) on this link
+      link.addEventListener('click', function (e) {
+        var targetId = link.getAttribute('href');
+        var target = document.querySelector(targetId);
+        if (!target) return;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        // close the mobile menu first, since collapsing it changes page height
+        if (collapseEl && collapseEl.classList.contains('show') && window.jQuery) {
+          window.jQuery(collapseEl).collapse('hide');
+        }
+
+        // wait a moment for the collapse animation, then measure + scroll
+        setTimeout(function () {
+          var top = target.getBoundingClientRect().top + window.pageYOffset - getNavOffset();
+          window.scrollTo({ top: top, behavior: 'smooth' });
+        }, 300);
+      }, true); // capture = true, so this fires before other listeners
+    });
+  })();
+  </script>
+
   </body>
 </html>
